@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UMBRA FILES // BLACKWOOD LANE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #010402;
+            color: #10b981;
+            font-family: 'Share Tech Mono', monospace;
+            overflow: hidden;
+            margin: 0;
+            user-select: none;
+        }
+
+        .crt::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.35) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.02));
+            z-index: 99;
+            background-size: 100% 3px, 3px 100%;
+            pointer-events: none;
+        }
+
+        .glow { text-shadow: 0 0 8px rgba(16, 185, 129, 0.8); }
+        .glow-red { text-shadow: 0 0 8px rgba(239, 68, 68, 0.8); }
+        .box-glow { box-shadow: 0 0 25px rgba(16, 185, 129, 0.15); }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #047857; }
+    </style>
+</head>
+<body class="crt h-screen w-screen flex items-center justify-center p-2 sm:p-4 bg-black">
+
+    <!-- 1. ЭКРАН ВЫБОРА ЯЗЫКА -->
+    <div id="lang-modal" class="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center p-4">
+        <div class="border-2 border-emerald-600 bg-zinc-950 p-8 rounded-lg max-w-md w-full text-center box-glow">
+            <h1 class="text-3xl font-bold mb-2 glow text-emerald-400">UMBRA FILES</h1>
+            <p class="text-xs text-emerald-600 mb-6 tracking-widest uppercase">PROJECT: BLACKWOOD LANE</p>
+            <p class="text-sm text-emerald-300 mb-6">SELECT SYSTEM LANGUAGE / ВЫБЕРИТЕ ЯЗЫК:</p>
+            <div class="flex gap-4 justify-center">
+                <button onclick="startSystem('en')" class="px-6 py-3 border border-emerald-500 hover:bg-emerald-900 text-emerald-200 font-bold rounded transition-all cursor-pointer">ENGLISH</button>
+                <button onclick="startSystem('ru')" class="px-6 py-3 border border-emerald-500 hover:bg-emerald-900 text-emerald-200 font-bold rounded transition-all cursor-pointer">РУССКИЙ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. ГЛАВНЫЙ ИНТЕРФЕЙС КОМПЬЮТЕРА -->
+    <div class="w-full max-w-6xl h-[92vh] bg-zinc-950 border-2 border-emerald-800 rounded-lg flex flex-col justify-between box-glow relative overflow-hidden">
+        
+        <!-- Шапка ПК с часами и кнопкой выхода в командную строку -->
+        <div class="bg-zinc-900 border-b border-emerald-900 px-4 py-2 flex justify-between items-center text-xs text-emerald-500">
+            <span id="header-title">UMBRA OS v4.12 // TERMINAL</span>
+            <div class="flex items-center gap-4">
+                <button onclick="logoutSystem()" class="text-yellow-400 hover:text-yellow-200 font-bold cursor-pointer border border-yellow-800 px-2 py-0.5 rounded">🚪 ВЫХОД В КОМАНДНУЮ СТРОКУ</button>
+                <span id="system-clock" class="text-emerald-300 font-mono">00:00:00</span>
+                <span id="lock-status" class="text-red-500 font-bold">[STATUS: LOCKED]</span>
+            </div>
+        </div>
+
+        <!-- Контейнер Терминала -->
+        <div id="terminal-view" class="flex-1 flex flex-col justify-between p-4 overflow-hidden">
+            <div id="screen" class="flex-1 overflow-y-auto space-y-2 font-mono text-sm sm:text-base pr-2">
+                <p class="text-emerald-600">[BOOT SEQUENCE COMPLETE]</p>
+                <p id="t-welcome" class="text-emerald-300">Enter secure access key for Blackwood Lane database.</p>
+                <p id="t-warn" class="text-red-500 glow-red font-bold">WARNING: Unauthorized access is monitored by local authorities.</p>
+                <br>
+                <p id="t-hint" class="text-yellow-400">Type <span class="bg-emerald-950 px-1 border border-emerald-700 text-white">HELP</span> for available commands.</p>
+                <div class="border-b border-dashed border-emerald-900 my-2"></div>
+            </div>
+
+            <!-- Строка ввода -->
+            <div class="mt-2 pt-2 border-t border-emerald-900 flex items-center gap-2">
+                <span class="text-emerald-400 font-bold glow">C:\BLACKWOOD></span>
+                <input type="text" id="cmd-input" autocomplete="off" spellcheck="false" autofocus
+                    class="flex-1 bg-transparent text-emerald-300 outline-none border-none font-mono text-sm sm:text-base caret-emerald-400"
+                    placeholder="Enter command..." onkeydown="handleKey(event)">
+                <button onclick="submitCmd()" class="px-4 py-1 border border-emerald-700 bg-emerald-950 text-emerald-300 text-xs hover:bg-emerald-800 cursor-pointer">OK</button>
+            </div>
+        </div>
+
+        <!-- 3. ГРАФИЧЕСКИЙ РАБОЧИЙ СТОЛ -->
+        <div id="desktop-view" class="hidden flex-1 relative p-6 bg-[#010804] overflow-auto">
+            <div class="flex justify-between items-center mb-6 border-b border-emerald-900/60 pb-2">
+                <p class="text-xs text-emerald-500 tracking-wider" id="desk-hint">СИСТЕМНЫЙ РАБОЧИЙ СТОЛ // UMBRA ARCHIVES</p>
+                <span class="text-[10px] text-emerald-600 font-mono">SECURE_SESSION: ACTIVE</span>
+            </div>
+            
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-6">
+                <!-- Мой компьютер -->
+                <div onclick="openFolder('my_pc')" class="flex flex-col items-center cursor-pointer group p-3 border border-transparent hover:border-emerald-700 hover:bg-emerald-950/20 rounded transition-all">
+                    <svg class="w-14 h-14 text-emerald-400 group-hover:scale-105 transition-transform" fill="currentColor" viewBox="0 0 20 20"><path d="M2 5a2 2 0 012-2h12a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm14 1H4v5h12V6zM2 13a1 1 0 011-1h14a1 1 0 011 1v1a1 1 0 01-1 1H3a1 1 0 01-1-1v-1z"></path></svg>
+                    <span class="text-xs text-emerald-300 mt-2 font-bold glow text-center">THIS_PC</span>
+                </div>
+                <!-- Полицейские отчеты -->
+                <div onclick="openFolder('police')" class="flex flex-col items-center cursor-pointer group p-3 border border-transparent hover:border-emerald-700 hover:bg-emerald-950/20 rounded transition-all">
+                    <svg class="w-14 h-14 text-emerald-500 group-hover:scale-105 transition-transform" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"></path></svg>
+                    <span class="text-xs text-emerald-300 mt-2 font-bold glow text-center">POLICE_REPORTS</span>
+                </div>
+                <!-- Логи монстров -->
+                <div onclick="openFolder('monsters')" class="flex flex-col items-center cursor-pointer group p-3 border border-transparent hover:border-emerald-700 hover:bg-emerald-950/20 rounded transition-all">
+                    <svg class="w-14 h-14 text-emerald-500 group-hover:scale-105 transition-transform" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"></path></svg>
+                    <span class="text-xs text-emerald-300 mt-2 font-bold glow text-center">MONSTER_LOGS</span>
+                </div>
+                <!-- Архив инцидентов -->
+                <div onclick="openFolder('incidents')" class="flex flex-col items-center cursor-pointer group p-3 border border-transparent hover:border-emerald-700 hover:bg-emerald-950/20 rounded transition-all">
+                    <svg class="w-14 h-14 text-emerald-500 group-hover:scale-105 transition-transform" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"></path></svg>
+                    <span class="text-xs text-emerald-300 mt-2 font-bold glow text-center">INCIDENTS_ARCHIVE</span>
+                </div>
+                <!-- Полевые заметки -->
+                <div onclick="openFolder('field')" class="flex flex-col items-center cursor-pointer group p-3 border border-transparent hover:border-emerald-700 hover:bg-emerald-950/20 rounded transition-all">
+                    <svg class="w-14 h-14 text-emerald-500 group-hover:scale-105 transition-transform" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"></path></svg>
+                    <span class="text-xs text-emerald-300 mt-2 font-bold glow text-center">FIELD_NOTES</span>
+                </div>
+                <!-- Массовая пропажа лесных животных -->
+                <div onclick="openFolder('animals')" class="flex flex-col items-center cursor-pointer group p-3 border border-transparent hover:border-emerald-500 hover:bg-emerald-950/20 rounded transition-all">
+                    <svg class="w-14 h-14 text-emerald-400 group-hover:scale-105 transition-transform" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"></path></svg>
+                    <span class="text-xs text-emerald-300 mt-2 font-bold glow text-center">ANIMAL_DISAPPEARANCE</span>
+                </div>
+                <!-- Корзина -->
+                <div onclick="openFolder('trash')" class="flex flex-col items-center cursor-pointer group p-3 border border-transparent hover:border-emerald-700 hover:bg-emerald-950/20 rounded transition-all">
+                    <svg class="w-14 h-14 text-emerald-600 group-hover:scale-105 transition-transform" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4h12v2H4V4zm2 3h8l-1 10H7L6 7z"></path></svg>
+                    <span class="text-xs text-emerald-400 mt-2 font-bold glow text-center">RECYCLE_BIN</span>
+                </div>
+                <!-- Секретная зона -->
+                <div onclick="openFolder('secret')" class="flex flex-col items-center cursor-pointer group p-3 border border-transparent hover:border-red-900 hover:bg-red-950/20 rounded transition-all">
+                    <svg class="w-14 h-14 text-red-500 group-hover:scale-105 transition-transform" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"></path></svg>
+                    <span class="text-xs text-red-400 mt-2 font-bold glow-red text-center">(???)</span>
+                </div>
+                <!-- Антивирус -->
+                <div onclick="openAntivirus()" class="flex flex-col items-center cursor-pointer group p-3 border border-transparent hover:border-cyan-700 hover:bg-cyan-950/20 rounded transition-all">
+                    <svg class="w-14 h-14 text-cyan-400 group-hover:scale-105 transition-transform" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zM9 9V5h2v4h4v2h-4v4H9v-4H5V9h4z"></path></svg>
+                    <span class="text-xs text-cyan-300 mt-2 font-bold glow text-center">UMBRA_ANTIVIRUS.EXE</span>
+                </div>
+                <!-- Викторина флагов -->
+                <div onclick="openFlagGame()" class="flex flex-col items-center cursor-pointer group p-3 border border-transparent hover:border-yellow-600 hover:bg-yellow-950/20 rounded transition-all">
+                    <svg class="w-14 h-14 text-yellow-400 group-hover:scale-105 transition-transform" fill="currentColor" viewBox="0 0 20 20"><path d="M3 3a1 1 0 000 2h11a1 1 0 100-2H3zM3 7a1 1 0 000 2h7a1 1 0 100-2H3zM3 11a1 1 0 100 2h4a1 1 0 100-2H3z"></path></svg>
+                    <span class="text-xs text-yellow-300 mt-2 font-bold glow text-center">FLAG_QUIZ.EXE</span>
+                </div>
+                <!-- Мини-игра: Побег от тени -->
+                <div onclick="openShadowEscapeGame()" class="flex flex-col items-center cursor-pointer group p-3 border border-transparent hover:border-red-600 hover:bg-red-950/20 rounded transition-all">
+                    <svg class="w-14 h-14 text-red-500 group-hover:scale-105 transition-transform" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zM10 4a6 6 0 110 12 6 6 0 010-12zm-1 5a1 1 0 102 0V7a1 1 0 10-2 0v2zm1 4a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"></path></svg>
+                    <span class="text-xs text-red-400 mt-2 font-bold glow-red text-center">SHADOW_ESCAPE.EXE</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 4. ОКНО ФАЙЛОВОГО МЕНЕДЖЕРА -->
+    <div id="window-popup" class="hidden fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-3xl bg-zinc-950 border-2 border-emerald-500 rounded shadow-2xl z-[80] box-glow flex flex-col">
+        <div class="bg-emerald-950 border-b border-emerald-700 px-4 py-2.5 flex justify-between items-center">
+            <span id="popup-title" class="text-sm font-bold text-emerald-300">EXPLORER</span>
+            <button onclick="closePopup()" class="text-red-400 hover:text-red-200 font-bold text-xs cursor-pointer">[CLOSE X]</button>
+        </div>
+        <div id="popup-body" class="p-6 max-h-[75vh] overflow-y-auto text-sm sm:text-base text-emerald-200 leading-relaxed"></div>
+    </div>
+
+    <!-- 5. ОКНО АНТИВИРУСА -->
+    <div id="antivirus-modal" class="hidden fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-lg bg-zinc-950 border-2 border-cyan-500 rounded shadow-2xl z-[90] flex flex-col">
+        <div class="bg-cyan-950 border-b border-cyan-700 px-3 py-2 flex justify-between items-center">
+            <span class="text-xs font-bold text-cyan-300">UMBRA DEFENDER // CLEANER v1.0</span>
+            <button onclick="closeAntivirus()" class="text-red-400 hover:text-red-200 font-bold text-xs cursor-pointer">[CLOSE X]</button>
+        </div>
+        <div class="p-4 flex flex-col gap-3 text-xs sm:text-sm text-cyan-200">
+            <p>Статус защиты: <span class="text-yellow-400 font-bold">ОБНАРУЖЕНЫ АНОМАЛИИ</span></p>
+            <div id="av-log" class="bg-black p-3 border border-cyan-900 h-36 overflow-y-auto font-mono text-cyan-400 space-y-1">
+                Нажмите кнопку ниже для сканирования системы.
+            </div>
+            <div class="flex gap-2">
+                <button onclick="runScan()" class="px-4 py-2 bg-cyan-950 hover:bg-cyan-900 border border-cyan-600 text-cyan-200 rounded font-bold cursor-pointer flex-1">СКАНИРОВАТЬ</button>
+                <button onclick="playSound('error'); cleanThreats()" class="px-4 py-2 bg-red-950 hover:bg-red-900 border border-red-600 text-red-200 rounded font-bold cursor-pointer">УДАЛИТЬ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. ОКНО МИНИ-ИГРЫ С ФЛАГАМИ -->
+    <div id="flag-game-modal" class="hidden fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-lg bg-zinc-950 border-2 border-yellow-500 rounded shadow-2xl z-[90] flex flex-col">
+        <div class="bg-yellow-950 border-b border-yellow-700 px-3 py-2 flex justify-between items-center">
+            <span class="text-xs font-bold text-yellow-300">FLAG_QUIZ ARCADE v1.0</span>
+            <div class="flex items-center gap-2">
+                <button onclick="toggleArcadeMusic()" id="arcade-music-btn" class="border border-yellow-700 px-2 py-0.5 rounded text-[10px] text-yellow-200 cursor-pointer">🎵 МУЗЫКА: ВКЛ</button>
+                <button onclick="closeFlagGame()" class="text-red-400 hover:text-red-200 font-bold text-xs cursor-pointer">[CLOSE X]</button>
+            </div>
+        </div>
+        <div class="p-4 flex flex-col gap-4 text-xs sm:text-sm text-yellow-200 items-center">
+            <div class="w-full flex justify-between items-center text-xs text-yellow-400 border-b border-yellow-900 pb-1">
+                <span id="quiz-progress">Вопрос 1 / 3</span>
+            </div>
+            <div id="quiz-question" class="font-bold text-yellow-300 text-sm text-center">Определите страну по нарисованному флагу:</div>
+            
+            <div id="quiz-canvas-container" class="w-64 h-36 border-2 border-yellow-600 rounded bg-black flex items-center justify-center p-2">
+                <canvas id="flagCanvas" width="220" height="120" class="rounded shadow"></canvas>
+            </div>
+
+            <div id="quiz-options" class="grid grid-cols-2 gap-2 w-full"></div>
+            <div id="quiz-result" class="text-center font-bold text-xs h-6"></div>
+        </div>
+    </div>
+
+    <!-- 7. ОКНО МИНИ-ИГРЫ: SHADOW ESCAPE -->
+    <div id="shadow-escape-modal" class="hidden fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-xl bg-zinc-950 border-2 border-red-600 rounded shadow-2xl z-[95] flex flex-col">
+        <div class="bg-red-950 border-b border-red-700 px-3 py-2 flex justify-between items-center">
+            <span class="text-xs font-bold text-red-400">SHADOW_ESCAPE // SURVIVE THE CORRIDOR</span>
+            <div class="flex items-center gap-2">
+                <button onclick="toggleShadowMusic()" id="shadow-music-btn" class="border border-red-700 px-2 py-0.5 rounded text-[10px] text-red-300 cursor-pointer">🎵 СТРАШНАЯ МУЗЫКА: ВКЛ</button>
+                <button onclick="closeShadowEscapeGame()" class="text-red-400 hover:text-red-200 font-bold text-xs cursor-pointer">[CLOSE X]</button>
+            </div>
+        </div>
+        <div class="p-4 flex flex-col gap-3 items-center">
+            <p class="text-xs text-red-300 text-center">Используйте клавиши <b>СТРЕЛКИ (ВЛЕВО / ВПРАВО)</b> или кнопки ниже, чтобы уходить от преследования 3-метровой Тени!</p>
+            
+            <div class="border-2 border-red-800 bg-black rounded p-2 relative">
+                <canvas id="shadowCanvas" width="460" height="240" class="rounded"></canvas>
+            </div>
+
+            <div class="flex gap-4 w-full justify-center mt-1">
+                <button onmousedown="movePlayer(-1)" class="px-6 py-2 bg-red-950 hover:bg-red-900 border border-red-600 text-red-200 font-bold rounded cursor-pointer">◄ НАЗАД</button>
+                <button onmousedown="movePlayer(1)" class="px-6 py-2 bg-red-950 hover:bg-red-900 border border-red-600 text-red-200 font-bold rounded cursor-pointer">ВПЕРЕД ►</button>
+            </div>
+            <div id="shadow-game-status" class="text-xs font-bold text-red-400 h-5 text-center">Избегайте приближения монстра! Выживание: <span id="survival-score">0</span>с</div>
+        </div>
+    </div>
+
+    <script>
+        let lang = 'ru';
+        let audioCtx = null;
+        let vhsAmbientInterval = null;
+        let isVhsAmbientPlaying = false;
+
+        let arcadeMusicInterval = null;
+        let isArcadeMusicPlaying = false;
+
+        let shadowMusicInterval = null;
+        let isShadowMusicPlaying = false;
+
+        function playSound(type) {
+            try {
+                if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if(audioCtx.state === 'suspended') audioCtx.resume();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if(type === 'success') {
+                    osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
+                    osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.08);
+                    gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.2);
+                } else if(type === 'error') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(140, audioCtx.currentTime);
+                    osc.frequency.setValueAtTime(90, audioCtx.currentTime + 0.15);
+                    gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.3);
+                }
+            } catch(e){}
+        }
+
+        // --- НОВАЯ СИНТВЕЙВ VHS-МУЗЫКА С ЛЕНТОЧНЫМ WOW/FLUTTER ЭФФЕКТОМ ---
+        function startAmbientMusic() {
+            if(vhsAmbientInterval) return;
+            isVhsAmbientPlaying = true;
+            
+            // Ноты ностальгического ретро-аккорда (Am7 / Fmaj7)
+            const vhsChord = [220, 261.63, 329.63, 392.00, 174.61, 220, 261.63, 329.63];
+            let step = 0;
+
+            vhsAmbientInterval = setInterval(() => {
+                if(!isVhsAmbientPlaying) return;
+                try {
+                    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    
+                    // Мягкий синусоидально-треугольный синтез с VHS дефектом
+                    osc.type = 'triangle';
+                    
+                    // Эффект "деформации ленты VHS" (плавающий тон / pitch detune)
+                    const baseFreq = vhsChord[step % vhsChord.length];
+                    const tapeWobble = (Math.random() - 0.5) * 4; // Легкое вибрирование ленты
+                    osc.frequency.setValueAtTime(baseFreq + tapeWobble, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(baseFreq - tapeWobble, audioCtx.currentTime + 1.2);
+
+                    // Резонансный фильтр для аналогового теплого звучания
+                    const filter = audioCtx.createBiquadFilter();
+                    filter.type = 'lowpass';
+                    filter.frequency.value = 800; // Срезаем лишние высокие частоты, как на VHS кассетах
+
+                    gain.gain.setValueAtTime(0.02, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.0005, audioCtx.currentTime + 1.4);
+
+                    osc.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(audioCtx.destination);
+
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 1.5);
+
+                    step++;
+                } catch(e){}
+            }, 800);
+        }
+
+        function stopAmbientMusic() {
+            isVhsAmbientPlaying = false;
+            if(vhsAmbientInterval) {
+                clearInterval(vhsAmbientInterval);
+                vhsAmbientInterval = null;
+            }
+        }
+
+        // Музыка аркады флагов
+        function startArcadeMusic() {
+            if(arcadeMusicInterval) return;
+            isArcadeMusicPlaying = true;
+            const notes = [261.63, 329.63, 392.00, 523.25, 392.00, 329.63];
+            let step = 0;
+            arcadeMusicInterval = setInterval(() => {
+                if(!isArcadeMusicPlaying) return;
+                try {
+                    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.value = notes[step % notes.length];
+                    gain.gain.setValueAtTime(0.015, audioCtx.currentTime);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.12);
+                    step++;
+                } catch(e){}
+            }, 180);
+        }
+
+        function stopArcadeMusic() {
+            isArcadeMusicPlaying = false;
+            if(arcadeMusicInterval) {
+                clearInterval(arcadeMusicInterval);
+                arcadeMusicInterval = null;
+            }
+        }
+
+        // Страшная музыка для Shadow Escape
+        function startShadowMusic() {
+            if(shadowMusicInterval) return;
+            isShadowMusicPlaying = true;
+            const scaryNotes = [65.41, 73.42, 61.74, 55.00];
+            let sIdx = 0;
+            shadowMusicInterval = setInterval(() => {
+                if(!isShadowMusicPlaying) return;
+                try {
+                    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.value = scaryNotes[sIdx % scaryNotes.length];
+                    gain.gain.setValueAtTime(0.025, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.2);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 1.3);
+                    sIdx++;
+                } catch(e){}
+            }, 1400);
+        }
+
+        function stopShadowMusic() {
+            isShadowMusicPlaying = false;
+            if(shadowMusicInterval) {
+                clearInterval(shadowMusicInterval);
+                shadowMusicInterval = null;
+            }
+        }
+
+        function toggleShadowMusic() {
+            if(isShadowMusicPlaying) {
+                stopShadowMusic();
+                document.getElementById('shadow-music-btn').innerText = "🔇 СТРАШНАЯ МУЗЫКА: ВЫКЛ";
+            } else {
+                startShadowMusic();
+                document.getElementById('shadow-music-btn').innerText = "🎵 СТРАШНАЯ МУЗЫКА: ВКЛ";
+            }
+        }
+
+        function toggleArcadeMusic() {
+            if(isArcadeMusicPlaying) {
+                stopArcadeMusic();
+                document.getElementById('arcade-music-btn').innerText = "🔇 МУЗЫКА: ВЫКЛ";
+            } else {
+                startArcadeMusic();
+                document.getElementById('arcade-music-btn').innerText = "🎵 МУЗЫКА: ВКЛ";
+            }
+        }
+
+        // Часы реального времени
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('system-clock').innerText = now.toTimeString().split(' ')[0];
+        }, 1000);
+
+        function startSystem(selectedLang) {
+            lang = selectedLang;
+            playSound('success');
+            document.getElementById('lang-modal').style.display = 'none';
+            startAmbientMusic(); // Включение VHS музыки при запуске
+
+            if(lang === 'ru') {
+                document.getElementById('header-title').innerText = "UMBRA OS v4.12 // DESKTOP";
+                document.getElementById('t-welcome').innerText = "Введите защищенный ключ доступа к базе данных Blackwood Lane.";
+                document.getElementById('t-warn').innerText = "ВНИМАНИЕ: Все действия фиксируются местными властями.";
+                document.getElementById('t-hint').innerHTML = "Введите <span class='bg-emerald-950 px-1 border border-emerald-700 text-white'>HELP</span> для просмотра доступных команд.";
+                document.getElementById('desk-hint').innerText = "СИСТЕМНЫЙ РАБОЧИЙ СТОЛ // Двойной клик по папкам для изучения архивов:";
+            }
+        }
+
+        function logoutSystem() {
+            playSound('success');
+            stopAmbientMusic();
+            closePopup();
+            closeAntivirus();
+            closeFlagGame();
+            closeShadowEscapeGame();
+
+            document.getElementById('desktop-view').classList.add('hidden');
+            document.getElementById('terminal-view').classList.remove('hidden');
+            document.getElementById('header-title').innerText = "UMBRA OS v4.12 // TERMINAL";
+            document.getElementById('lock-status').innerText = "[STATUS: LOCKED]";
+            document.getElementById('lock-status').className = "text-red-500 font-bold";
+            startAmbientMusic();
+        }
+
+        const screen = document.getElementById('screen');
+        const cmdInput = document.getElementById('cmd-input');
+
+        function addLog(text, color = "text-emerald-400") {
+            const p = document.createElement('p');
+            p.className = color;
+            p.innerText = text;
+            screen.appendChild(p);
+            screen.scrollTop = screen.scrollHeight;
+        }
+
+        function handleKey(e) {
+            if (e.key === 'Enter') submitCmd();
+        }
+
+        function submitCmd() {
+            const val = cmdInput.value.trim();
+            if(!val) return;
+            addLog("C:\\BLACKWOOD> " + val, "text-emerald-600 font-bold");
+            cmdInput.value = "";
+            parseCmd(val);
+        }
+
+        function parseCmd(rawCmd) {
+            const cmd = rawCmd.toUpperCase();
+
+            if (cmd === 'HELP') {
+                addLog("=== ДОСТУПНЫЕ КОМАНДЫ ===", "text-yellow-400");
+                addLog("PASSWORD - Запросить подсказку дешифрования пароля");
+                addLog("WHOAMI   - Проверить текущую учетную запись");
+                addLog("TRACE    - Отследить входящие сетевые соединения");
+                addLog("EYES     - Проверить статус внешнего периметра");
+                addLog("KILL     - Прервать активные системные процессы");
+                addLog("UMBRA    - Запросить протокол связи с корпорацией");
+                addLog("CLS      - Очистить экран терминала");
+            } 
+            else if (cmd === 'PASSWORD') {
+                playSound('success');
+                addLog(">>> ПОДСКАЗКА СИСТЕМЫ:", "text-yellow-400 font-bold");
+                addLog("Formula: \"nextyear2timesandthesecondreverse\"");
+            }
+            else if (cmd === '20277202') {
+                playSound('success');
+                document.getElementById('lock-status').innerText = "[STATUS: UNLOCKED]";
+                document.getElementById('lock-status').className = "text-green-400 font-bold glow";
+                addLog("[✓] ДОСТУП РАЗРЕШЕН! Запуск графической оболочки рабочего стола...", "text-green-400 font-bold glow");
+                
+                setTimeout(() => {
+                    document.getElementById('terminal-view').classList.add('hidden');
+                    document.getElementById('desktop-view').classList.remove('hidden');
+                    document.getElementById('header-title').innerText = "UMBRA OS v4.12 // DESKTOP";
+                }, 800);
+            } 
+            else if (cmd === 'WHOAMI' || cmd === 'TRACE' || cmd === 'EYES' || cmd === 'KILL' || cmd === 'UMBRA') {
+                if(cmd === 'WHOAMI') { addLog("Пользователь: root_observer_08\nСтатус: Под наблюдением Умбра."); }
+                if(cmd === 'TRACE') { addLog("Внимание: Источник сигнала прямо за вашей дверью."); }
+                if(cmd === 'EYES') { addLog("ОШИБКА: На камерах зафиксирован силуэт без лица."); }
+                if(cmd === 'KILL') { addLog("ПРЕДУПРЕЖДЕНИЕ: Вы не можете отключить систему."); }
+                if(cmd === 'UMBRA') { addLog("Проект 'Блэквуд Лейн' активен.", "text-red-400 font-bold"); }
+            }
+            else if (cmd === 'CLS' || cmd === 'CLEAR') {
+                screen.innerHTML = '';
+            } 
+            else {
+                playSound('error');
+                addLog(`Неизвестная команда: "${rawCmd}". Введите HELP.`, "text-red-400");
+            }
+        }
+
+        // Картинки и SVG кассеты
+        const imgFeet64 = "https://raw.githubusercontent.com/RawPawP/umbrafiles/04311d96b302683a8048a6b701d0b24d7ce7ced0/6d0ce001-76ee-49ac-956e-4ca41cbbd822.png";
+        const imgForest64 = "https://raw.githubusercontent.com/RawPawP/umbrafiles/04311d96b302683a8048a6b701d0b24d7ce7ced0/image.png";
+        const cassetteSvg = `<svg class="w-6 h-6 text-emerald-400 inline-block mr-1" fill="currentColor" viewBox="0 0 512 512"><path d="M448 64H64C28.65 64 0 92.65 0 128v256c0 35.35 28.65 64 64 64h384c35.35 0 64-28.65 64-64V128c0-35.35-28.65-64-64-64zm0 304H64V128h384v240zM128 176c-26.5 0-48 21.5-48 48s21.5 48 48 48 48-21.5 48-48-21.5-48-48-48zm256 0c-26.5 0-48 21.5-48 48s21.5 48 48 48 48-21.5 48-48-21.5-48-48-48zm-192 16h128v64H192z"/></svg>`;
+
+        // База папок
+        const folderData = {
+            my_pc: {
+                title: "THIS_PC (КОМПЬЮТЕР ОБНАРУЖЕНИЯ)",
+                items: [
+                    { name: "SYSTEM_DISK_C.SYS", type: "text", text: "[ДИСК C:]\nЕмкость: 512 ГБ\nСвободно: 12.4 ГБ (Забито зашифрованными логами Умбра)\nФайловая система: NTFS // SECURE_ENCRYPTED" },
+                    { name: "RESERVE_DISK_D.SYS", type: "text", text: "[ДИСК D: (BLACKWOOD_ARCHIVE)]\nЕмкость: 2.0 ТБ\nСтатус: Доступ ограничен сетевым протоколом.\nСодержит медиафайлы оперативного наблюдения за аномальной зоной." },
+                    { name: "HARDWARE_INFO.TXT", type: "text", text: "[ХАРАКТЕРИСТИКИ ТЕРМИНАЛА]\nПроцессор: UMBRA Neural Core v4\nОперативная память: 64 ГБ ECC\nВидеокарта: Matrox Millennium II (модифицированная для тепловизионного спектра)" }
+                ]
+            },
+            police: {
+                title: "POLICE_REPORTS",
+                items: [
+                    { name: "INCIDENT_094.TXT", type: "text", text: "[ПОЛИЦЕЙСКИЙ ОТЧЕТ #094]\nДата: 14 Октября 1997\nМесто: Лес Блэквуд, сектор 7\n\nОПИСАНИЕ СИТУАЦИИ:\nПатрульный экипаж обнаружил брошенный на лесной дороге автомобиль. Двери распахнуты, фары включены. Никаких следов борьбы или пассажиров. Поисковые группы свернули работы из-за аномальных радиопомех." },
+                    { name: "MISSING_KIDS.TXT", type: "text", text: "[АРХИВ МЕСТНОГО ОТДЕЛЕНИЯ — ПРОПАВШИЕ]\n1. Томми Миллер (12 лет) — 03.05.1996\n2. Сара Коннор (10 лет) — 11.08.1996\n3. Майкл Браун (14 лет) — 02.02.1997\nНа месте исчезновений обнаружены глубокие борозды когтей неживотного происхождения." },
+                    { name: "FOREST_PHOTO.IMG", type: "image", img: imgForest64, cap: "Фотография #01: Ночная съемка лесной опушки[cite: 4]." }
+                ]
+            },
+            monsters: {
+                title: "MONSTER_LOGS",
+                items: [
+                    { name: "CREATURE_LOG.TXT", type: "text", text: "[ОТЧЕТ НАБЛЮДАТЕЛЯ #03]\nСубъект: Гуманоидная аномалия ростом ~3.2 метра. Бесшумна. Приближение вызывает мгновенный сбой электроники и падение температуры." },
+                    { name: "FACTORY_FEET.IMG", type: "image", img: imgFeet64, cap: "Фотография #02: Детализированный снимок конечностей объекта[cite: 1]." },
+                    { name: "AUDIT_REPORT.TXT", type: "text", text: "[ВНУТРЕННИЙ АУДИТ UMBRA]\nЛаборанты ночной смены сообщали о непрерывном скрежете металла в вентшахтах. Объект целенаправленно преследует персонал." }
+                ]
+            },
+            incidents: {
+                title: "INCIDENTS_ARCHIVE",
+                items: [
+                    { name: "BLACKOUT_96.TXT", type: "text", text: "[АВАРИЯ НА ПОДСТАНЦИИ — 12.11.1996]\nИнженеры обнаружены в углу операторской в полном оцепенении. Пульты залиты технической смазкой. Рассудок пострадавших не восстановлен." },
+                    { name: "RADIO_INTERCEPT.TXT", type: "text", text: "[РАДИОПЕРЕХВАТ 104.2 МГц]\nГолос на записи повторяет: \"Они гасят свет, чтобы мы не видели их лиц\"." }
+                ]
+            },
+            field: {
+                title: "FIELD_NOTES",
+                items: [
+                    { name: "INVESTIGATOR_DIARY.TXT", type: "text", text: "[ПОЛЕВОЙ ДНЕВНИК АГЕНТА №8]\nДень 14: Туман осязаем. Каждое утро на машине новые следы когтей. Рация хрипит чужим дыханием." },
+                    { name: "LOCAL_LEGENDS.TXT", type: "text", text: "[ЗАПИСКИ КРАЕВЕДА]\nВ 1930-х здесь исчезла артель лесорубов. Бараки целы, но внутри выцарапаны странные геометрические символы." }
+                ]
+            },
+            animals: {
+                title: "ANIMAL_DISAPPEARANCE (МАССОВАЯ ПРОПАЖА ЖИВОТНЫХ)",
+                items: [
+                    { name: "ANIMALS_LOG.TXT", type: "text", text: "[ОТЧЕТ ЕГЕРЯ — МАССОВОЕ ИСЧЕЗНОВЕНИЕ ФАУНЫ]\nОсень 1997 года ознаменовалась полным уходом всей дичи и лесных животных из заповедника Блэквуд.\n\nЗа месяц егерский обход не зафиксировал ни единого следа оленей, волков, лисиц или птиц. Лес стал мертвым и абсолютно тихим. В глубоких чащах были найдены десятки пустых шкур без следов крови и разрывов, аккуратно сложенных у подножий вековых деревьев." },
+                    { name: "VHS: BLACKWOOD FOREST.MP4", type: "video", url: "https://raw.githubusercontent.com/RawPawP/umbrafiles/93d8d2f8d23a7173d6b4e8e6c5ac8e39898222f1/videoplayback.mp4", cap: "VHS Кассета #04: Последняя запись лесной камеры наблюдения перед ее отключением." }
+                ]
+            },
+            trash: {
+                title: "RECYCLE_BIN",
+                items: [
+                    { name: "CORRUPTED_CACHE.TMP", type: "text", text: "[ПОВРЕЖДЕННЫЕ ДАННЫЕ]\nФайл заблокирован протоколом безопасности Умбра." }
+                ]
+            },
+            secret: {
+                title: "CLASSIFIED_RESTRICTED_ZONE",
+                items: [
+                    { name: "(???) RELEASE 1.0.exe", type: "exec", text: "[ОШИБКА 0xC0000005]: Доступ к исполняемому файлу запрещен." }
+                ]
+            }
+        };
+
+        function openFolder(key) {
+            if(key === 'secret') {
+                playSound('error');
+            } else {
+                playSound('success');
+            }
+            stopAmbientMusic();
+
+            const data = folderData[key];
+            document.getElementById('popup-title').innerText = `ПАПКА: ${data.title}`;
+            const body = document.getElementById('popup-body');
+            body.innerHTML = '';
+
+            data.items.forEach(file => {
+                const div = document.createElement('div');
+                div.className = "flex items-center justify-between p-3.5 my-2 border border-emerald-900 bg-emerald-950/40 hover:bg-emerald-900/60 rounded cursor-pointer transition-colors";
+                
+                let iconSymbol = '<span class="text-emerald-400 font-bold">[TXT]</span>';
+                if(file.type === 'image') iconSymbol = '<span class="text-emerald-400 font-bold">[IMG]</span>';
+                if(file.type === 'video') iconSymbol = cassetteSvg;
+                if(file.type === 'exec') iconSymbol = '<span class="text-red-500 font-bold">[EXE]</span>';
+
+                div.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        ${iconSymbol}
+                        <span class="font-bold text-emerald-200 text-base">${file.name}</span>
+                    </div>
+                    <span class="text-xs text-emerald-500 font-bold">ОТКРЫТЬ ></span>
+                `;
+                div.onclick = () => {
+                    if(file.type === 'exec') {
+                        playSound('error');
+                    } else {
+                        playSound('success');
+                    }
+                    showFile(file);
+                };
+                body.appendChild(div);
+            });
+
+            document.getElementById('window-popup').classList.remove('hidden');
+        }
+
+        function showFile(file) {
+            document.getElementById('popup-title').innerText = `ПРОСМОТР: ${file.name}`;
+            const body = document.getElementById('popup-body');
+            
+            if (file.type === 'text' || file.type === 'exec') {
+                const textColor = file.type === 'exec' ? 'text-red-400' : 'text-emerald-300';
+                body.innerHTML = `<pre class="whitespace-pre-wrap font-mono ${textColor} bg-black p-6 border border-emerald-900 rounded text-sm sm:text-base leading-relaxed">${file.text}</pre>`;
+            } else if (file.type === 'image') {
+                body.innerHTML = `
+                    <div class="flex flex-col items-center gap-4">
+                        <img src="${file.img}" class="max-h-[500px] border-2 border-emerald-700 rounded shadow-lg object-contain" alt="Изображение">
+                        <p class="text-sm text-emerald-400 italic text-center max-w-xl">${file.cap}</p>
+                    </div>
+                `;
+            } else if (file.type === 'video') {
+                body.innerHTML = `
+                    <div class="flex flex-col items-center gap-4">
+                        <div class="relative border-2 border-emerald-700 bg-black rounded shadow-lg overflow-hidden w-full max-w-xl">
+                            <video id="vhsPlayer" class="w-full max-h-[400px] object-contain">
+                                <source src="${file.url}" type="video/mp4">
+                                Ваш браузер не поддерживает кассеты VHS.
+                            </video>
+                            <div class="bg-emerald-950 border-t border-emerald-800 p-2 flex items-center justify-between gap-4 text-xs">
+                                <button onclick="toggleVideoPlay()" id="playPauseBtn" class="px-4 py-1.5 bg-emerald-900 hover:bg-emerald-800 text-emerald-200 font-bold rounded cursor-pointer border border-emerald-600">⏸ ПАУЗА / СТАРТ</button>
+                                <span class="text-emerald-400 font-mono tracking-widest">[VHS DECK ACTIVE]</span>
+                                <button onclick="restartVideo()" class="px-3 py-1.5 bg-emerald-900 hover:bg-emerald-800 text-emerald-200 rounded cursor-pointer border border-emerald-600">⏪ СБРОС</button>
+                            </div>
+                        </div>
+                        <p class="text-sm text-emerald-400 italic text-center max-w-xl">${file.cap}</p>
+                    </div>
+                `;
+                setTimeout(() => {
+                    const v = document.getElementById('vhsPlayer');
+                    if(v) v.play().catch(e => {});
+                }, 100);
+            }
+        }
+
+        function toggleVideoPlay() {
+            const v = document.getElementById('vhsPlayer');
+            if(!v) return;
+            if(v.paused) v.play();
+            else v.pause();
+        }
+
+        function restartVideo() {
+            const v = document.getElementById('vhsPlayer');
+            if(!v) return;
+            v.currentTime = 0;
+            v.play();
+        }
+
+        function closePopup() {
+            playSound('success');
+            const v = document.getElementById('vhsPlayer');
+            if(v) {
+                v.pause();
+                v.currentTime = 0;
+            }
+            document.getElementById('window-popup').classList.add('hidden');
+            startAmbientMusic();
+        }
+
+        // Антивирус
+        function openAntivirus() {
+            playSound('success');
+            stopAmbientMusic();
+            document.getElementById('antivirus-modal').classList.remove('hidden');
+        }
+        function closeAntivirus() {
+            playSound('success');
+            document.getElementById('antivirus-modal').classList.add('hidden');
+            startAmbientMusic();
+        }
+        function runScan() {
+            playSound('success');
+            const log = document.getElementById('av-log');
+            log.innerHTML = "Сканирование памяти... Обнаружена сигнатура 'Blackwood_Entity'.";
+        }
+        function cleanThreats() {
+            playSound('error');
+            const log = document.getElementById('av-log');
+            log.innerHTML += "<br><span class='text-red-500 font-bold'>ОШИБКА: Угроза блокирует удаление.</span>";
+        }
+
+        // Викторина с флагами
+        const quizData = [
+            {
+                country: "Япония",
+                options: ["Япония", "Франция", "Германия", "Бразилия"],
+                draw: (ctx) => {
+                    ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, 220, 120);
+                    ctx.fillStyle = "#bc002d"; ctx.beginPath(); ctx.arc(110, 60, 32, 0, Math.PI * 2); ctx.fill();
+                }
+            },
+            {
+                country: "Германия",
+                options: ["Бельгия", "Германия", "Италия", "Нидерланды"],
+                draw: (ctx) => {
+                    ctx.fillStyle = "#000000"; ctx.fillRect(0, 0, 220, 40);
+                    ctx.fillStyle = "#dd0000"; ctx.fillRect(0, 40, 220, 40);
+                    ctx.fillStyle = "#ffcc00"; ctx.fillRect(0, 80, 220, 40);
+                }
+            },
+            {
+                country: "Франция",
+                options: ["Франция", "Россия", "США", "Великобритания"],
+                draw: (ctx) => {
+                    ctx.fillStyle = "#002654"; ctx.fillRect(0, 0, 73, 120);
+                    ctx.fillStyle = "#ffffff"; ctx.fillRect(73, 0, 74, 120);
+                    ctx.fillStyle = "#ce1126"; ctx.fillRect(147, 0, 73, 120);
+                }
+            }
+        ];
+        let currentQuizIndex = 0;
+
+        function openFlagGame() {
+            playSound('success');
+            stopAmbientMusic();
+            currentQuizIndex = 0;
+            loadQuiz();
+            startArcadeMusic();
+            document.getElementById('arcade-music-btn').innerText = "🎵 МУЗЫКА: ВКЛ";
+            document.getElementById('flag-game-modal').classList.remove('hidden');
+        }
+
+        function closeFlagGame() {
+            playSound('success');
+            stopArcadeMusic();
+            document.getElementById('flag-game-modal').classList.add('hidden');
+            startAmbientMusic();
+        }
+
+        function loadQuiz() {
+            if(currentQuizIndex >= quizData.length) {
+                document.getElementById('quiz-question').innerText = "ПОБЕДА! Все флаги успешно угаданы!";
+                document.getElementById('quiz-canvas-container').style.display = 'none';
+                document.getElementById('quiz-options').innerHTML = "";
+                document.getElementById('quiz-result').innerText = "Аркадный уровень пройден.";
+                playSound('success');
+                return;
+            }
+            document.getElementById('quiz-canvas-container').style.display = 'flex';
+            const q = quizData[currentQuizIndex];
+            document.getElementById('quiz-progress').innerText = `Вопрос ${currentQuizIndex + 1} / ${quizData.length}`;
+            document.getElementById('quiz-result').innerText = "";
+
+            const canvas = document.getElementById('flagCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            q.draw(ctx);
+
+            const optDiv = document.getElementById('quiz-options');
+            optDiv.innerHTML = "";
+            q.options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "p-2.5 bg-yellow-950/60 hover:bg-yellow-900 border border-yellow-700 rounded text-yellow-200 text-center font-bold cursor-pointer";
+                btn.innerText = opt;
+                btn.onclick = () => checkQuiz(opt, q.country);
+                optDiv.appendChild(btn);
+            });
+        }
+
+        function checkQuiz(selected, correct) {
+            if(selected === correct) {
+                playSound('success');
+                document.getElementById('quiz-result').innerHTML = "<span class='text-green-400'>[✓] Верно!</span>";
+                currentQuizIndex++;
+                setTimeout(loadQuiz, 1000);
+            } else {
+                playSound('error');
+                document.getElementById('quiz-result').innerHTML = "<span class='text-red-400'>[X] Неверно, попробуйте еще раз.</span>";
+            }
+        }
+
+        // --- МИНИ-ИГРА: SHADOW ESCAPE ---
+        let shadowInterval = null;
+        let playerX = 200;
+        let monsterX = 40;
+        let survivalTime = 0;
+        let isShadowGameOver = false;
+
+        function openShadowEscapeGame() {
+            playSound('success');
+            stopAmbientMusic();
+            playerX = 200;
+            monsterX = 40;
+            survivalTime = 0;
+            isShadowGameOver = false;
+            document.getElementById('survival-score').innerText = "0";
+            document.getElementById('shadow-game-status').innerText = "Убегайте от Тени!";
+            document.getElementById('shadow-escape-modal').classList.remove('hidden');
+            
+            startShadowMusic();
+            document.getElementById('shadow-music-btn').innerText = "🎵 СТРАШНАЯ МУЗЫКА: ВКЛ";
+
+            if(shadowInterval) clearInterval(shadowInterval);
+            shadowInterval = setInterval(updateShadowGame, 50);
+        }
+
+        function closeShadowEscapeGame() {
+            playSound('success');
+            if(shadowInterval) clearInterval(shadowInterval);
+            stopShadowMusic();
+            document.getElementById('shadow-escape-modal').classList.add('hidden');
+            startAmbientMusic();
+        }
+
+        function movePlayer(dir) {
+            if(isShadowGameOver) return;
+            playerX += dir * 25;
+            if(playerX < 20) playerX = 20;
+            if(playerX > 440) playerX = 440;
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if(document.getElementById('shadow-escape-modal').classList.contains('hidden')) return;
+            if(e.key === 'ArrowLeft') movePlayer(-1);
+            if(e.key === 'ArrowRight') movePlayer(1);
+        });
+
+        function updateShadowGame() {
+            if(isShadowGameOver) return;
+            survivalTime += 0.05;
+            document.getElementById('survival-score').innerText = survivalTime.toFixed(1);
+
+            let speed = 1.8 + (survivalTime * 0.12);
+            if(monsterX < playerX - 10) monsterX += speed;
+            if(monsterX > playerX + 10) monsterX -= speed;
+
+            if(Math.abs(monsterX - playerX) < 22) {
+                isShadowGameOver = true;
+                playSound('error');
+                document.getElementById('shadow-game-status').innerHTML = "<span class='text-red-500 font-bold'>СКРИМЕР! Тень поймала вас!</span>";
+                stopShadowMusic();
+                clearInterval(shadowInterval);
+            }
+
+            drawShadowGame();
+        }
+
+        function drawShadowGame() {
+            const canvas = document.getElementById('shadowCanvas');
+            if(!canvas) return;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = "#050202";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.strokeStyle = "#450a0a";
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(0, 0); ctx.lineTo(160, 80);
+            ctx.moveTo(460, 0); ctx.lineTo(300, 80);
+            ctx.moveTo(160, 240); ctx.lineTo(160, 80);
+            ctx.moveTo(300, 240); ctx.lineTo(300, 80);
+            ctx.stroke();
+
+            // Игрок
+            ctx.fillStyle = "#10b981";
+            ctx.fillRect(playerX - 12, 170, 24, 50);
+            ctx.fillStyle = "#064e3b";
+            ctx.fillRect(playerX - 8, 145, 16, 25);
+
+            // Тень
+            ctx.fillStyle = "#18181b";
+            ctx.fillRect(monsterX - 18, 120, 36, 100);
+            ctx.fillStyle = "#ef4444";
+            ctx.fillRect(monsterX - 10, 135, 6, 6);
+            ctx.fillRect(monsterX + 4, 135, 6, 6);
+        }
+    </script>
+</body>
+</html>
